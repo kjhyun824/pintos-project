@@ -33,7 +33,7 @@ struct donation {
 	struct thread* children;
 	int saved_priority;
 };
-int load_avg;
+int64_t load_avg;
 
 /* A kernel thread or user process.
 
@@ -117,7 +117,7 @@ struct thread
 		struct donation dona;
 
 		int nice;
-		int recent_cpu;
+		int64_t recent_cpu;
   };
 
 /* If false (default), use round-robin scheduler.
@@ -154,8 +154,10 @@ static bool priority_more (const struct list_elem *a_, const struct list_elem *b
 int thread_get_priority (void);
 void thread_set_priority (int);
 
+//void thread_calc_nice_all (void);
 int thread_get_nice (void);
 void thread_set_nice (int);
+void recent_cpu_inc_1 (void);
 void thread_set_recent_cpu(void);
 int thread_get_recent_cpu (void);
 void thread_set_load_avg(void);

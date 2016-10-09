@@ -128,8 +128,9 @@ main (void)
 #endif
 
   printf ("Boot complete.\n");
-  
-	load_avg=0;
+
+  /* HSJ */
+	load_avg = 0;
   /* Run actions specified on kernel command line. */
   run_actions (argv);
 
