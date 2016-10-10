@@ -129,11 +129,24 @@ static bool wakeup_time_less(const struct list_elem *a_, const struct list_elem 
 void timer_unblock() {
 	if(list_empty(&sleep_list)) return; // if list is empty, then just return
 
+	/*
 	const struct thread *t = list_entry(list_front(&sleep_list), struct thread, elem);
 	if(t->wakeup_time <= timer_ticks()) {
 		list_pop_front(&sleep_list);
 		thread_unblock(t);
 	}
+	*/
+
+	struct list_elem *e = list_front(&sleep_list);
+	while (1) {
+		struct thread *t = list_entry(e, struct thread, elem);
+		if(t->wakeup_time > timer_ticks()) break;
+		list_pop_front(&sleep_list);
+		thread_unblock(t);
+		if(list_empty(&sleep_list)) break;
+		e = list_front(&sleep_list);
+	}
+
 }
 
 /* Sleeps for approximately MS milliseconds.  Interrupts must be
