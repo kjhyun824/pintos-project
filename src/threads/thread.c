@@ -384,7 +384,6 @@ thread_get_priority (void)
 }
 
 /* HSJ */
-/*
 void thread_calc_nice_all (void) {
 	enum intr_level old_level;
 	old_level = intr_disable();
@@ -402,7 +401,6 @@ void thread_calc_nice_all (void) {
 
 	intr_set_level(old_level);
 }
-*/
 
 /* Sets the current thread's nice value to NICE. */
 void

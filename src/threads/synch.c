@@ -242,7 +242,14 @@ lock_acquire (struct lock *lock)
 			lock->holder->dona.next = &d;
 		}
 		lock->holder->priority = thread_current()->priority;
-		if(lock->holder->dona.children != NULL) lock->holder->dona.children->priority = lock->holder->priority;
+		if(lock->holder->dona.children != NULL) {
+			struct thread *temp = lock->holder->dona.children;
+			temp->priority = lock->holder->priority;
+			while(temp->dona.children) {
+				temp = temp->dona.children;
+				temp->priority = lock->holder->priority;
+			}
+		}
 
 		list_sort(&lock->semaphore.waiters,priority_more,NULL);
 	}
