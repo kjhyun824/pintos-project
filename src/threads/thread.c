@@ -392,9 +392,9 @@ void thread_calc_nice_all (void) {
 	for ( e=list_begin(&all_list); e!=list_end(&all_list); e=list_next(e)) {
 		struct thread *t = list_entry(e,struct thread,allelem);
 		if ( t != idle_thread ) {
-			t->priority = PRI_MAX - ((t->recent_cpu/4)>>16)  - (2 * t->nice);
 			if ( t->priority > PRI_MAX ) t->priority = PRI_MAX;
 			if ( t->priority < PRI_MAX ) t->priority = PRI_MIN;
+			t->priority = PRI_MAX - ((t->recent_cpu/4)>>16)  - (2 * t->nice);
 		}
 	}
 	list_sort(&ready_list,priority_more,NULL);
@@ -412,9 +412,9 @@ thread_set_nice (int nice UNUSED)
 	old_level = intr_disable();
 
 	thread_current()->nice = nice;
-	thread_current()->priority = PRI_MAX - ((thread_current()->recent_cpu/4)>>16) - (2 * nice);
 	if ( thread_current()->priority > PRI_MAX ) thread_current()->priority = PRI_MAX;
 	if ( thread_current()->priority < PRI_MAX ) thread_current()->priority = PRI_MIN;
+	thread_current()->priority = PRI_MAX - ((thread_current()->recent_cpu/4)>>16) - (2 * nice);
 
 	intr_set_level(old_level);
 

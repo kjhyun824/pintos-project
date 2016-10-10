@@ -228,6 +228,7 @@ timer_interrupt (struct intr_frame *args UNUSED)
   timer_unblock();
 	
 	if(thread_mlfqs) {
+		if(timer_ticks()%4==0) thread_calc_nice_all();
 		recent_cpu_inc_1();
 		if(timer_ticks()%TIMER_FREQ==0) {
 			thread_set_recent_cpu();
@@ -237,7 +238,6 @@ timer_interrupt (struct intr_frame *args UNUSED)
 			if(((load_avg)>>16) == 2 && timer_ticks()/(8*TIMER_FREQ)==0) 
 				thread_current()->recent_cpu = ((thread_current()->recent_cpu)*9)/10;	
 		}
-		//if(timer_ticks()%4==0) thread_calc_nice_all();
 	}
 
   thread_tick ();
