@@ -68,9 +68,10 @@ sema_down (struct semaphore *sema)
   old_level = intr_disable ();
   while (sema->value == 0) 
   {
-    //list_push_back (&sema->waiters, &thread_current ()->elem);
 		/* HSJ */
+    //list_push_back (&sema->waiters, &thread_current ()->elem);
 	  list_insert_ordered (&sema->waiters,&thread_current()->elem,priority_more,NULL);
+
     thread_block ();
   }
   sema->value--;
@@ -119,6 +120,8 @@ void
 sema_up (struct semaphore *sema) 
 {
   enum intr_level old_level;
+
+	/* HSJ */
 	bool check;
 	check = false;
 
@@ -126,14 +129,17 @@ sema_up (struct semaphore *sema)
 
   old_level = intr_disable ();
   if (!list_empty (&sema->waiters))  {
+		/* HSJ */
 		if ( list_entry(list_front(&sema->waiters),struct thread,elem)->priority >= thread_current()->priority)
 			check = true;
+
     thread_unblock (list_entry (list_pop_front (&sema->waiters),
                                 struct thread, elem));
 	}
   sema->value++;
   intr_set_level (old_level);
 
+	/* HSJ */
 	if (check)
 	{
 		if(!intr_context())
@@ -202,7 +208,6 @@ lock_init (struct lock *lock)
 
   lock->holder = NULL;
   sema_init (&lock->semaphore, 1);
-	list_init (&donation_list);
 }
 
 /* Acquires LOCK, sleeping until it becomes available if
@@ -220,6 +225,7 @@ lock_acquire (struct lock *lock)
   ASSERT (!intr_context ());
   ASSERT (!lock_held_by_current_thread (lock));
 
+	/* HSJ */
 	struct donation d;
 	if(lock->holder != NULL && lock->holder->priority < thread_current()->priority) {
 		if(lock->holder->dona.next == NULL) {
@@ -237,6 +243,8 @@ lock_acquire (struct lock *lock)
 		}
 		lock->holder->priority = thread_current()->priority;
 		if(lock->holder->dona.children != NULL) lock->holder->dona.children->priority = lock->holder->priority;
+
+		list_sort(&lock->semaphore.waiters,priority_more,NULL);
 	}
 
 	sema_down (&lock->semaphore);
@@ -274,6 +282,7 @@ lock_release (struct lock *lock)
   ASSERT (lock != NULL);
   ASSERT (lock_held_by_current_thread (lock));
 
+	/* HSJ */
 	if(lock->holder != NULL && lock->holder->dona.next != NULL) {
 		struct donation *temp;
 		temp = &lock->holder->dona;
@@ -293,6 +302,7 @@ lock_release (struct lock *lock)
 			}
 		}
 	}
+	list_sort(&lock->semaphore.waiters,priority_more,NULL);
 	if(lock->holder->dona.next == NULL && lock->holder->dona.saved_priority != -1)
 	  lock->holder->priority = lock->holder->dona.saved_priority;
 
@@ -364,8 +374,8 @@ cond_wait (struct condition *cond, struct lock *lock)
   ASSERT (lock_held_by_current_thread (lock));
   
   sema_init (&waiter.semaphore, 0);
-  //list_push_back (&cond->waiters, &waiter.elem);
 	/* HSJ */
+  //list_push_back (&cond->waiters, &waiter.elem);
 	waiter.prio = thread_current()->priority;
 	if ( !list_empty(&cond->waiters) ) {
 		struct list_elem *e;

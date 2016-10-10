@@ -23,13 +23,9 @@ void timer_msleep (int64_t milliseconds);
 void timer_usleep (int64_t microseconds);
 void timer_nsleep (int64_t nanoseconds);
 
-// KJH
-/*
-void sleep_insert(int64_t wakeup_ticks, struct thread *t);
-void timer_unblock();
-*/
-static bool wakeup_time_less(const struct list_elem *a_,const struct list_elem *b_, void *aux UNUSED);
-void timer_unblock();
+/* HSJ */
+static bool wakeup_time_less(const struct list_elem *a_,const struct list_elem *b_, void *);
+void timer_unblock(void);
 
 /* Busy waits. */
 void timer_mdelay (int64_t milliseconds);

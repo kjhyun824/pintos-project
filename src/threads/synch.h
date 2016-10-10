@@ -19,7 +19,6 @@ void sema_self_test (void);
 
 /* HSJ */
 static bool priority_more (const struct list_elem *a_, const struct list_elem *b_, void *);
-static struct list donation_list;
 
 /* Lock. */
 struct lock 

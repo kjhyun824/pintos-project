@@ -154,13 +154,15 @@ static bool priority_more (const struct list_elem *a_, const struct list_elem *b
 int thread_get_priority (void);
 void thread_set_priority (int);
 
-//void thread_calc_nice_all (void);
-int thread_get_nice (void);
+/* HSJ */
+void thread_set_load_avg(void);
+void thread_set_recent_cpu(void);
 void thread_set_nice (int);
 void recent_cpu_inc_1 (void);
-void thread_set_recent_cpu(void);
+//void thread_calc_nice_all (void);
+
+int thread_get_nice (void);
 int thread_get_recent_cpu (void);
-void thread_set_load_avg(void);
 int thread_get_load_avg (void);
 
 #endif /* threads/thread.h */

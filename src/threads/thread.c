@@ -365,8 +365,10 @@ static bool priority_more(const struct list_elem *a_, const struct list_elem *b_
 void
 thread_set_priority (int new_priority) 
 {
+	/* HSJ */
   if(thread_current()->dona.next != NULL)
-	thread_current()->dona.saved_priority = new_priority;
+		thread_current()->dona.saved_priority = new_priority;
+	//
   else
   	thread_current ()->priority = new_priority;
 
@@ -381,27 +383,43 @@ thread_get_priority (void)
   return thread_current ()->priority;
 }
 
-/*void thread_calc_nice_all (void) {
+/* HSJ */
+/*
+void thread_calc_nice_all (void) {
+	enum intr_level old_level;
+	old_level = intr_disable();
+
 	struct list_elem *e;
 	for ( e=list_begin(&all_list); e!=list_end(&all_list); e=list_next(e)) {
 		struct thread *t = list_entry(e,struct thread,allelem);
 		if ( t != idle_thread ) {
-			t->priority = PRI_MAX - (t->recent_cpu/4)>>14  - (2 * t->nice);
+			t->priority = PRI_MAX - ((t->recent_cpu/4)>>16)  - (2 * t->nice);
 			if ( t->priority > PRI_MAX ) t->priority = PRI_MAX;
 			if ( t->priority < PRI_MAX ) t->priority = PRI_MIN;
 		}
 	}
-}*/
+	list_sort(&ready_list,priority_more,NULL);
+
+	intr_set_level(old_level);
+}
+*/
 
 /* Sets the current thread's nice value to NICE. */
 void
 thread_set_nice (int nice UNUSED) 
 {
-  /* Not yet implemented. */
+  /* HSJ */
+
+	enum intr_level old_level;
+	old_level = intr_disable();
+
 	thread_current()->nice = nice;
-	thread_current()->priority = PRI_MAX - (thread_current()->recent_cpu/4)>>14 - (2 * nice);
+	thread_current()->priority = PRI_MAX - ((thread_current()->recent_cpu/4)>>16) - (2 * nice);
 	if ( thread_current()->priority > PRI_MAX ) thread_current()->priority = PRI_MAX;
 	if ( thread_current()->priority < PRI_MAX ) thread_current()->priority = PRI_MIN;
+
+	intr_set_level(old_level);
+
 	thread_yield();
 }
 
@@ -409,7 +427,7 @@ thread_set_nice (int nice UNUSED)
 int
 thread_get_nice (void) 
 {
-  /* Not yet implemented. */
+  /* HSJ */
   return thread_current()->nice;
 }
 
@@ -422,41 +440,59 @@ void thread_set_load_avg(void) {
 		if ( t != idle_thread && (t->status == THREAD_RUNNING || t->status == THREAD_READY) )
 			ready_run_thread ++;
 	}
-	load_avg = (59*load_avg + (1<<14)*ready_run_thread)/60;
+
+	enum intr_level old_level;
+	old_level = intr_disable();
+
+	load_avg = (59*load_avg + (1<<16)*ready_run_thread)/60;
+
+	intr_set_level(old_level);
 }
 
 /* Returns 100 times the system load average. */
 int
 thread_get_load_avg (void) 
 {
-  /* Not yet implemented. */
-	return (100*load_avg)>>14;
+  /* HSJ */
+	return (100*load_avg)>>16;
 }
 
+/* HSJ */
 void recent_cpu_inc_1 (void) {
+	enum intr_level old_level;
+	old_level = intr_disable();
+
 	struct list_elem *e;
 	for ( e=list_begin(&all_list); e!=list_end(&all_list); e=list_next(e)) {
 		struct thread *t = list_entry(e,struct thread,allelem);
 		if ( t != idle_thread && t->status == THREAD_RUNNING )
-			t->recent_cpu += 1<<14;
+			t->recent_cpu += 1<<16;
 	}
+
+	intr_set_level(old_level);
 }
 
+/* HSJ */
 void thread_set_recent_cpu (void) {
+	enum intr_level old_level;
+	old_level = intr_disable();
+
 	struct list_elem *e;
 	for ( e=list_begin(&all_list); e!=list_end(&all_list); e=list_next(e)) {
 		struct thread *t = list_entry(e,struct thread,allelem);
 		if ( t != idle_thread && (t->status != THREAD_DYING) )
-			t->recent_cpu = (2*load_avg*t->recent_cpu)/(2*load_avg+ (1<<14)) + (1<<14)*t->nice;
+			t->recent_cpu = (2*load_avg*t->recent_cpu)/(2*load_avg+ (1<<16)) + (1<<16)*t->nice;
 	}
+
+	intr_set_level(old_level);
 }
 
 /* Returns 100 times the current thread's recent_cpu value. */
 int
 thread_get_recent_cpu (void) 
 {
-  /* Not yet implemented. */
-  return	(100*thread_current()->recent_cpu)>>14;
+  /* HSJ */
+  return	(100*thread_current()->recent_cpu)>>16;
 }
 
 /* Idle thread.  Executes when no other thread is ready to run.
