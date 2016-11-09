@@ -39,9 +39,15 @@ process_execute (const char *file_name)
   strlcpy (fn_copy, file_name, PGSIZE);
 
   /* Create a new thread to execute FILE_NAME. */
-  tid = thread_create (file_name, PRI_DEFAULT, start_process, fn_copy);
+	char *real_name, *saved;
+	real_name = palloc_get_page(0);
+	strlcpy(real_name,file_name,PGSIZE);
+	real_name = strtok_r(real_name," ",&saved);
+
+  tid = thread_create (real_name, PRI_DEFAULT, start_process, fn_copy);
   if (tid == TID_ERROR)
     palloc_free_page (fn_copy); 
+
   return tid;
 }
 
@@ -54,6 +60,25 @@ start_process (void *file_name_)
   struct intr_frame if_;
   bool success;
 
+	/* SJ */
+	list_init(&(thread_current()->fd_list));
+
+	char *fn_copy; 
+	char *token, *_saved;
+	unsigned argc = 0;
+	fn_copy = palloc_get_page(0);
+	strlcpy(fn_copy,file_name,PGSIZE);
+	for(token = strtok_r(file_name, " ", &_saved); token != NULL; token = strtok_r(NULL, " ", &_saved)) {
+		argc++;
+	}
+	char *argv[argc+1];
+	argv[argc] = NULL;
+	int i=0;
+	for(token = strtok_r(fn_copy, " ", &_saved); token != NULL; token = strtok_r(NULL, " ", &_saved)) {
+		argv[i++] = token;
+	}
+	
+
   /* Initialize interrupt frame and load executable. */
   memset (&if_, 0, sizeof if_);
   if_.gs = if_.fs = if_.es = if_.ds = if_.ss = SEL_UDSEG;
@@ -61,6 +86,43 @@ start_process (void *file_name_)
   if_.eflags = FLAG_IF | FLAG_MBS;
   success = load (file_name, &if_.eip, &if_.esp);
 
+	/* SJ */
+	// push argument into stack
+	uintptr_t _addr[argc];
+	// arg data
+	for ( i=argc-1; i >= 0; i--) { 
+		if_.esp -= ((strlen(argv[i]))+1);
+		_addr[i] = (uintptr_t) if_.esp;
+		strlcpy((char *)if_.esp,(argv[i]+'\0'),strlen(argv[i])+1);
+	}
+
+	// word-align
+	if_.esp -= ((uintptr_t)if_.esp) % 4;
+	   
+	// address of value (argv[argc]~argv[0])
+	if_.esp -= sizeof(char *);
+	*(uintptr_t *)if_.esp = (uintptr_t *)NULL;
+
+	for ( i=argc-1; i >= 0; i--) {  
+		if_.esp -= sizeof(char *);
+		*(uintptr_t *)if_.esp = _addr[i];
+	}
+
+	// address of argv[0]
+	if_.esp -= sizeof(char **);
+	*(uintptr_t *)if_.esp  = (uintptr_t)if_.esp + 4;
+
+	// value argc
+	if_.esp -= sizeof(argc);
+	*(unsigned *)if_.esp = argc;
+
+	// return address
+	if_.esp -= sizeof(void *);
+	*(unsigned *)if_.esp = 0;
+	
+
+	//printf("\n");
+	//hex_dump(if_.esp,if_.esp,PHYS_BASE-if_.esp,true);
   /* If load failed, quit. */
   palloc_free_page (file_name);
   if (!success) 
@@ -88,7 +150,14 @@ start_process (void *file_name_)
 int
 process_wait (tid_t child_tid UNUSED) 
 {
-  return -1;
+	/* SJ */
+	struct thread *child = thread_by_tid(child_tid);
+	//int child_exit_status;
+	while(child != NULL) 
+		child = thread_by_tid(child_tid); // busy waiting
+
+	//if ( child_exit_status == -1 ) return -1;
+	return thread_current()->child_exit_status;
 }
 
 /* Free the current process's resources. */

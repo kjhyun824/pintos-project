@@ -250,9 +250,8 @@ lock_acquire (struct lock *lock)
 				temp->priority = lock->holder->priority;
 			}
 		}
-
-		list_sort(&lock->semaphore.waiters,priority_more,NULL);
 	}
+	list_sort(&lock->semaphore.waiters,priority_more,NULL);
 
 	sema_down (&lock->semaphore);
   lock->holder = thread_current ();
@@ -309,9 +308,10 @@ lock_release (struct lock *lock)
 			}
 		}
 	}
-	list_sort(&lock->semaphore.waiters,priority_more,NULL);
 	if(lock->holder->dona.next == NULL && lock->holder->dona.saved_priority != -1)
 	  lock->holder->priority = lock->holder->dona.saved_priority;
+
+	list_sort(&lock->semaphore.waiters,priority_more,NULL);
 
   lock->holder = NULL;
   sema_up (&lock->semaphore);

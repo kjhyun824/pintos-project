@@ -1,5 +1,6 @@
 #include "filesys/file.h"
 #include <debug.h>
+#include <list.h>
 #include "filesys/inode.h"
 #include "threads/malloc.h"
 
@@ -9,6 +10,7 @@ struct file
     struct inode *inode;        /* File's inode. */
     off_t pos;                  /* Current position. */
     bool deny_write;            /* Has file_deny_write() been called? */
+		struct list open_thr_list;
   };
 
 /* Opens a file for the given INODE, of which it takes ownership,
@@ -165,4 +167,8 @@ file_tell (struct file *file)
 {
   ASSERT (file != NULL);
   return file->pos;
+}
+
+struct list* get_open_thr_list(struct file *file) {
+	return &file->open_thr_list;
 }

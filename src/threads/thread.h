@@ -4,6 +4,7 @@
 #include <debug.h>
 #include <list.h>
 #include <stdint.h>
+#include "filesys/file.h"
 
 /* States in a thread's life cycle. */
 enum thread_status
@@ -34,6 +35,13 @@ struct donation {
 	int saved_priority;
 };
 int64_t load_avg;
+
+/* SJ */
+struct fd_struct {
+	int fd;
+	struct file* file;
+	struct list_elem elem;
+};
 
 /* A kernel thread or user process.
 
@@ -118,6 +126,13 @@ struct thread
 
 		int nice;
 		int64_t recent_cpu;
+
+		/* SJ */
+		struct list fd_list;
+
+		tid_t parent_tid;
+		int child_exit_status;
+		tid_t wait_by;
   };
 
 /* If false (default), use round-robin scheduler.
@@ -160,6 +175,9 @@ void thread_set_recent_cpu(void);
 void thread_set_nice (int);
 void recent_cpu_inc_1 (void);
 //void thread_calc_nice_all (void);
+
+/* SJ */
+struct thread* thread_by_tid(tid_t tid);
 
 int thread_get_nice (void);
 int thread_get_recent_cpu (void);

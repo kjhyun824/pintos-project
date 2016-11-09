@@ -9,6 +9,17 @@
 int
 main (void)
 {
-  halt ();
+/*	int handle;
+	handle = open("sample.txt");
+	close(handle);
+	*/
+  int handle, byte_cnt;
+
+	char sample[] = {"test.txt"};
+ 	create ("test.txt", sizeof sample - 1);
+  handle = open ("test.txt");
+
+  byte_cnt = write (handle, sample, sizeof sample - 1);
+ 
   /* not reached */
 }

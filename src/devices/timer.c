@@ -228,8 +228,8 @@ timer_interrupt (struct intr_frame *args UNUSED)
   timer_unblock();
 	
 	if(thread_mlfqs) {
-		if(timer_ticks()%4==0) thread_calc_nice_all();
 		recent_cpu_inc_1();
+		if(timer_ticks()%4==0) thread_calc_nice_all();
 		if(timer_ticks()%TIMER_FREQ==0) {
 			thread_set_recent_cpu();
 			thread_set_load_avg();

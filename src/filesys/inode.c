@@ -343,3 +343,9 @@ inode_length (const struct inode *inode)
 {
   return inode->data.length;
 }
+
+int
+inode_opencnt (const struct inode *inode)
+{
+	return inode->open_cnt;
+}

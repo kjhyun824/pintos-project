@@ -101,8 +101,8 @@ malloc (size_t size)
      request. */
   for (d = descs; d < descs + desc_cnt; d++)
     if (d->block_size >= size)
-      break;
-  if (d == descs + desc_cnt) 
+			break;
+	if (d == descs + desc_cnt) 
     {
       /* SIZE is too big for any descriptor.
          Allocate enough pages to hold SIZE plus an arena. */
