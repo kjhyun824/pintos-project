@@ -133,6 +133,9 @@ struct thread
 		tid_t parent_tid;
 		int child_exit_status;
 		tid_t wait_by;
+
+		struct list waiting_child_list;
+		struct list_elem waiting_child_elem;
   };
 
 /* If false (default), use round-robin scheduler.

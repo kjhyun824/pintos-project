@@ -12,6 +12,7 @@
 #include "filesys/inode.h"
 #include "threads/palloc.h"
 #include "threads/synch.h"
+#include "threads/vaddr.h"
 
 static void syscall_handler (struct intr_frame *);
 
@@ -114,6 +115,7 @@ int filesize (int fd) {
 }
 
 int read (int fd, void *buffer, unsigned size) { 
+	if(thread_current()->name != "main" && buffer >= PHYS_BASE) exit(-1);
 	if ( fd == 0 ) return input_getc();
 
 	struct fd_struct* fdst = find_struct_by_fd(fd);
@@ -160,7 +162,7 @@ syscall_handler (struct intr_frame *f UNUSED)
 	int *ptr = f->esp;
 	int i;
 	struct thread *curr = thread_current();
-
+	
 	switch(*ptr) {
 		case SYS_HALT://0
 			halt();

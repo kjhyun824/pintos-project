@@ -615,6 +615,8 @@ init_thread (struct thread *t, const char *name, int priority)
 	/* SJ */
 	t->child_exit_status = -1;
 	t->wait_by = -1;
+	list_init(&(t->fd_list));
+	list_init(&(t->waiting_child_list));
 
 	list_push_back (&all_list, &t->allelem);
 }

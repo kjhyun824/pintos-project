@@ -60,9 +60,6 @@ start_process (void *file_name_)
   struct intr_frame if_;
   bool success;
 
-	/* SJ */
-	list_init(&(thread_current()->fd_list));
-
 	char *fn_copy; 
 	char *token, *_saved;
 	unsigned argc = 0;
@@ -152,12 +149,31 @@ process_wait (tid_t child_tid UNUSED)
 {
 	/* SJ */
 	struct thread *child = thread_by_tid(child_tid);
-	//int child_exit_status;
-	while(child != NULL) 
-		child = thread_by_tid(child_tid); // busy waiting
+	if ( child == NULL ) return -1;
+	bool wait_exist = false;
 
-	//if ( child_exit_status == -1 ) return -1;
-	return thread_current()->child_exit_status;
+	if ( !list_empty(&(thread_current()->waiting_child_list)) ) {
+		struct list_elem *temp = list_front(&(thread_current()->waiting_child_list));
+		while(1) {
+			if( list_entry(temp,struct thread,waiting_child_elem)->tid == child->tid ) { 
+				wait_exist = true;
+				break;
+			}
+			if( temp == list_back(&(thread_current()->waiting_child_list)) ) break;
+			temp = list_next(temp);
+		}
+	}
+
+	if ( wait_exist ) {
+		return -1;
+	}
+	else {
+		list_push_back(&(thread_current()->waiting_child_list),&(child->waiting_child_elem));
+		while(child != NULL) 
+			child = thread_by_tid(child_tid); // busy waiting
+		return thread_current()->child_exit_status;
+	}
+
 }
 
 /* Free the current process's resources. */
