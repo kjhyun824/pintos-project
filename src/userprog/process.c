@@ -17,6 +17,7 @@
 #include "threads/palloc.h"
 #include "threads/thread.h"
 #include "threads/vaddr.h"
+#include "threads/synch.h"
 
 static thread_func start_process NO_RETURN;
 static bool load (const char *cmdline, void (**eip) (void), void **esp);
@@ -43,6 +44,13 @@ process_execute (const char *file_name)
 	real_name = palloc_get_page(0);
 	strlcpy(real_name,file_name,PGSIZE);
 	real_name = strtok_r(real_name," ",&saved);
+
+	struct file *file = filesys_open (real_name);
+  if (file == NULL) {
+		file_close(file);
+		return -1;
+	}
+	file_close(file);
 
   tid = thread_create (real_name, PRI_DEFAULT, start_process, fn_copy);
   if (tid == TID_ERROR)
@@ -75,7 +83,6 @@ start_process (void *file_name_)
 		argv[i++] = token;
 	}
 	
-
   /* Initialize interrupt frame and load executable. */
   memset (&if_, 0, sizeof if_);
   if_.gs = if_.fs = if_.es = if_.ds = if_.ss = SEL_UDSEG;
@@ -149,31 +156,42 @@ process_wait (tid_t child_tid UNUSED)
 {
 	/* SJ */
 	struct thread *child = thread_by_tid(child_tid);
-	if ( child == NULL ) return -1;
-	bool wait_exist = false;
-
-	if ( !list_empty(&(thread_current()->waiting_child_list)) ) {
-		struct list_elem *temp = list_front(&(thread_current()->waiting_child_list));
-		while(1) {
-			if( list_entry(temp,struct thread,waiting_child_elem)->tid == child->tid ) { 
-				wait_exist = true;
-				break;
+	if ( child == NULL ) { 
+		if ( !list_empty(&thread_current()->child_list) ) {
+			struct list_elem *temp = list_front(&thread_current()->child_list);
+			bool existed = false; // true if existed, false didn't existed
+			while(1) {
+				if ( list_entry(temp,struct child_struct,elem)->tid == child_tid ) {
+					existed = true;
+					break;
+				}
+				if ( temp == list_back(&thread_current()->child_list) ) break;
+				temp = temp->next;
 			}
-			if( temp == list_back(&(thread_current()->waiting_child_list)) ) break;
-			temp = list_next(temp);
-		}
-	}
 
-	if ( wait_exist ) {
+			if ( existed ) {
+				if ( list_entry(temp,struct child_struct,elem)->waited ) return -1;
+				return list_entry(temp,struct child_struct,elem)->exit_status;
+			}
+			else
+				return -1;
+		}
 		return -1;
 	}
-	else {
-		list_push_back(&(thread_current()->waiting_child_list),&(child->waiting_child_elem));
-		while(child != NULL) 
-			child = thread_by_tid(child_tid); // busy waiting
-		return thread_current()->child_exit_status;
-	}
 
+	while( child != NULL ) child = thread_by_tid(child_tid);
+
+	if ( !list_empty(&thread_current()->child_list) ) {
+		struct list_elem *temp2 = list_front(&thread_current()->child_list);
+		while(1) {
+			if ( list_entry(temp2,struct child_struct,elem)->tid == child_tid ) break;
+			if ( temp2 == list_back(&thread_current()->child_list) ) break;
+			temp2 = temp2->next;
+		}
+	
+		list_entry(temp2,struct child_struct,elem)->waited = true;
+		return list_entry(temp2,struct child_struct,elem)->exit_status;
+	}
 }
 
 /* Free the current process's resources. */

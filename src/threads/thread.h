@@ -5,6 +5,7 @@
 #include <list.h>
 #include <stdint.h>
 #include "filesys/file.h"
+#include "threads/synch.h"
 
 /* States in a thread's life cycle. */
 enum thread_status
@@ -40,6 +41,13 @@ int64_t load_avg;
 struct fd_struct {
 	int fd;
 	struct file* file;
+	struct list_elem elem;
+};
+
+struct child_struct {
+	tid_t tid;
+	int exit_status;
+	bool waited;
 	struct list_elem elem;
 };
 
@@ -131,11 +139,7 @@ struct thread
 		struct list fd_list;
 
 		tid_t parent_tid;
-		int child_exit_status;
-		tid_t wait_by;
-
-		struct list waiting_child_list;
-		struct list_elem waiting_child_elem;
+		struct list child_list;
   };
 
 /* If false (default), use round-robin scheduler.
@@ -181,6 +185,7 @@ void recent_cpu_inc_1 (void);
 
 /* SJ */
 struct thread* thread_by_tid(tid_t tid);
+void child_list_remove(struct thread* thr);
 
 int thread_get_nice (void);
 int thread_get_recent_cpu (void);

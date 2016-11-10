@@ -494,26 +494,40 @@ thread_get_recent_cpu (void)
 
 /* SJ */
 struct thread* thread_by_tid(tid_t tid) {
+	enum intr_level old_level;
 	struct thread *finded;
 	struct list_elem *temp;
 	bool success = false;
+
+	old_level = intr_disable();
 
 	if ( !list_empty(&all_list) ) {
 		temp = list_front(&all_list);
 		while(1) {
 			finded = list_entry(temp,struct thread,allelem);
-			if ( finded->tid == tid ) {
+			if ( finded != NULL && finded->tid == tid ) {
 				success = true;
 				break;
 			}
-			if ( temp == list_back(&all_list) ) break;
+			if ( list_empty(&all_list) || temp == list_back(&all_list) ) break;
 			temp = temp->next;
 		}
 	}
 
+	intr_set_level(old_level);
+
 	if( success )
 		return finded;
 	return NULL;
+}
+
+void child_list_remove(struct thread *thr) {
+	if ( !list_empty(&thr->child_list) ) {
+		while( !list_empty(&thr->child_list) ) {
+			struct list_elem *temp = list_pop_front(&thr->child_list);
+			palloc_free_page(list_entry(temp,struct child_struct,elem));
+		}
+	}
 }
 
 /* Idle thread.  Executes when no other thread is ready to run.
@@ -613,10 +627,8 @@ init_thread (struct thread *t, const char *name, int priority)
 	t->recent_cpu = running_thread()->recent_cpu;
 
 	/* SJ */
-	t->child_exit_status = -1;
-	t->wait_by = -1;
 	list_init(&(t->fd_list));
-	list_init(&(t->waiting_child_list));
+	list_init(&(t->child_list));
 
 	list_push_back (&all_list, &t->allelem);
 }
